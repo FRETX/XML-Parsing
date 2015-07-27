@@ -1,0 +1,50 @@
+import xml.etree.ElementTree as ET
+import pprint
+
+tree = ET.parse('Guitar1.xml')
+root = tree.getroot()
+
+nbFrets = 12
+nbStrings = 6
+
+matrix = [[0 for x in range(nbFrets)] for x in range(nbStrings)] 
+
+# we assume we have a single part
+# todo, go through all the parts, find the one with tab clef, 
+# check the number of stafflines to make sure we are on guitar part
+for m in root.findall('part/measure'):
+    # go throudh the note
+    for note in m.findall('note'):
+        print note
+        #check if the note is part of a score
+        chord = False
+        c = note.find("chord")
+        if c is not None:
+            chord = True
+
+        #get the fret information
+        technical = note.find("notations/technical")
+        if (technical is not None):
+            s = technical.find("string")
+            f = technical.find("fret")
+            print "MusicXML", "string=", s.text, "fret=", f.text
+            si = int(s.text) - 1 # string is 1-based in musicxml, our matrix is 0-based
+            fi = int(f.text)
+            # make sure we are in the acceptable limit
+            # try to move the note to another string otherwise
+            while fi > nbFrets - 1 and si > 1:
+                   fi -= (nbFrets - 1)
+                   si -=1
+            if fi > nbFrets - 1:
+                continue
+            print "Processed", "string=", si, "fret=", fi
+            
+            #add to the matrix
+            if not chord:
+                #clear the matrix
+                for i in range(nbStrings):
+                    for j in range(nbFrets):
+                        matrix[i][j] = 0
+            #set the matrix
+            matrix[si][fi] = 1
+            pprint.pprint(matrix)
